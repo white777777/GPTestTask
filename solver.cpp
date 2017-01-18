@@ -27,7 +27,13 @@ bool Solver::Solve()
   {
     Eigen::VectorXd deltaParams = SolveStep();
     _modelParams+= deltaParams;
-    double diff = sqrt(deltaParams.transpose() *deltaParams);
+    double diff = 0.0;
+    for(int i = 0; i< deltaParams.size(); ++i)
+    {
+      if(diff<deltaParams[i])
+        diff = deltaParams[i];
+    }
+    //double diff = sqrt(deltaParams.transpose() *deltaParams);
     if(diff<eps)
     {
       _isInited = false;

@@ -15,6 +15,7 @@ public:
   const static size_t nParams = 1;
   typedef Eigen::Matrix<double, nParams ,1> VParams;
   
+private:
   /// \f$ f(t) \f$
   inline double CalcFT (const VParams & params, const double t) const
   {
@@ -35,6 +36,7 @@ public:
     throw std::invalid_argument("Param index exceeds params count");
   }
   
+public:
   /// \f$ \int f(t) dt \f$
   /// This function used only for generating test data and shouldn't be
   /// implemented in another functions
@@ -43,6 +45,27 @@ public:
     const double& D = params[0];
     return -exp(-D*t)/D;
   }
+  
+public:
+  // Special for RegressionModelLn
+  double calcLnFT (const VParams & params, const double t) const
+  {
+    const double& D = params[0];
+    return -D*t;
+  }
+  
+  // Special for RegressionModelLn
+  double calcDFDIParamDivFT(size_t iParam, const VParams & params, const double t) const
+  {
+    switch(iParam)
+    {
+      case 0 :
+        return -t;
+        break;
+    }
+    throw std::invalid_argument("Param index exceeds params count");
+  }
+  
   
   inline double GetParamLowerLimits(size_t iParam) const
   {

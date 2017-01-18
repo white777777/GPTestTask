@@ -10,6 +10,7 @@ void tassert(bool val)
 
 TaskData generateTaskData(const FunctionRef& f, const std::vector<size_t> sizes, const Eigen::VectorXd& params)
 {
+  tassert(sizes.size() == size_t(params.size()-1));
   srand (123455);
   const FunctionRef::VParams funcParams{params[sizes.size()]};
   TaskData taskData;
@@ -38,7 +39,7 @@ void Tester::testExactSolution()
 {
   FunctionRef f;
   Eigen::Matrix<double,1, 4> params{2, 8, 3, 0.001};
-  const std::vector<size_t> sizes{100, 200, 300};
+  const std::vector<size_t> sizes{100, 200, 100};
   RegressionModelLn rm(generateTaskData(f, sizes, params));
   const double eps = 1e-8;
   for(size_t i = 1; i<rm._oTD.holes[0].qDivT.size(); ++i)
@@ -77,6 +78,19 @@ void Tester::testSolver()
   Eigen::VectorXd delta = res - Eigen::VectorXd(params);
   std::cout<<delta<<std::endl;
   std::cout<<delta.transpose()*delta<<std::endl;
-  //tassert(sqrt(delta.transpose()*delta)<1e-1);
+  tassert(sqrt(delta.transpose()*delta)<1e-1);
   std::cout<<"Aaand solution iiiis..."<<res.transpose()<<std::endl;
+}
+void Tester::testRealWorld()
+{
+  CSVDataImporter dataImporter;
+  RegressionModelLn rm(dataImporter.read("/mnt/windows/Users/user/Documents/projects/GPTestTask/taskData.csv"));
+  Solver solver(std::move(rm));
+  solver.SolverInit();
+  if(!solver.Solve())
+  {
+    std::cout<<"Solution not found"<<std::endl;
+    return;
+  }
+  std::cout<<"Result model params"<<solver.GetResult().transpose()<<std::endl;
 }

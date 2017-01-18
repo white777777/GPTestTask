@@ -9,11 +9,13 @@ class Tester
 {
   void testExactSolution();
   void testSolver();
+  void testRealWorld();
 public:
   void Test()
   {
     testExactSolution();
     testSolver();
+    testRealWorld();
   }
 };
 

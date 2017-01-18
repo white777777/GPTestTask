@@ -60,22 +60,14 @@ void RegressionModelLn::CalcValue(const Eigen::VectorXd& params, WorkingSet& ws)
       ws.J(it, i) = oneDivWsI;
       
       const double tFromStart = optHoleData.sumT[j];
-      const double fVal = _func.CalcFT(funcParams, tFromStart);
       // TODO: what if fVal = 0
       for(size_t iParam = 0; iParam<_func.nParams; ++iParam)
-        ws.J(it, _nQParams+iParam) = 1/fVal*_func.CalcDFDIParam(iParam, funcParams, tFromStart);
-
+      {
+        ws.J(it, _nQParams+iParam) = _func.calcDFDIParamDivFT(iParam, funcParams, tFromStart);
+      }
       const double qDivTVal = optHoleData.qDivT[j];
       if(abs(qDivTVal) > 0)
-        if(abs(fVal) > 0.0)
-          ws.yMinusF[it] = log(qDivTVal) -log(params[i]) - log(fVal);
-        else
-        {
-          // TODO: this means that we don't take to account model param limits
-          double zzz = funcParams[0];
-          ws.yMinusF[it] = log(qDivTVal) -log(params[i]) + zzz*tFromStart;
-          std::cout<<"Warn: fVal == 0.0, params:"<<params.transpose()<<std::endl;
-        }
+        ws.yMinusF[it] = log(qDivTVal) -log(params[i]) - _func.calcLnFT(funcParams, tFromStart);
       else
       {
         // TODO: filter this line from input task data
