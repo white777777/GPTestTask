@@ -1,9 +1,6 @@
 #ifndef TESTER_H
 #define TESTER_H
-#include <iostream>
-#include <cstdlib>
-#include "solver.h"
-#include "dataimporter.h"
+
 
 class Tester
 {

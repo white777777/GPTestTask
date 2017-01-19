@@ -22,9 +22,10 @@ solver.cpp
 taskdata.h
 taskdata.cpp
 regressionmodels.h
-regressionmodels.cpp
 tester.h
 tester.cpp
+analyze.h
+analyze.cpp
 )
 
 target_link_libraries (gptesttask ${CMAKE_THREAD_LIBS_INIT})

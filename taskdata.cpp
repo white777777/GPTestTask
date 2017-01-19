@@ -1,4 +1,8 @@
 #include "taskdata.h"
+
+#include <iostream>
+#include <algorithm>
+
 size_t TaskDataHelper::GetTaskSize(const TaskData& taskData)
 {
   size_t taskDataSize = 0;
@@ -18,18 +22,18 @@ size_t TaskDataHelper::GetTaskSize(const TaskData& taskData)
   return taskDataSize;
 }
   
-void TaskDataHelper::StripTaskData(TaskData& taskData, std::size_t i, std::size_t n, std::size_t nQ)
+void TaskDataHelper::StripTaskData(TaskData& taskData, size_t iHole, size_t nHole, size_t nQ)
 {
-  if(i>=taskData.holes.size())
+  if(iHole>=taskData.holes.size())
   {
     taskData = TaskData();
     return;
   }
-  size_t nn=taskData.holes.size() - i;
-  n = n>nn? nn:n;
-  for(size_t j = 0; j<n; ++j)
+  size_t nn=taskData.holes.size() - iHole;
+  nHole = nHole>nn? nn:nHole;
+  for(size_t j = 0; j<nHole; ++j)
   {
-    taskData.holes[j] = taskData.holes[j+i];
+    taskData.holes[j] = taskData.holes[j+iHole];
     size_t nnQ = taskData.holes[j].ts.size();
     if(nQ<nnQ)
     {
@@ -37,5 +41,13 @@ void TaskDataHelper::StripTaskData(TaskData& taskData, std::size_t i, std::size_
       taskData.holes[j].qOils.resize(nQ);
     }
   }
-  taskData.holes.resize(n);
+  taskData.holes.resize(nHole);
+}
+
+void TaskDataHelper::SwapOilWater(TaskData& taskData)
+{
+  for(size_t iHole = 0; iHole<taskData.holes.size(); ++iHole)
+  {
+    std::swap(taskData.holes[iHole].qOils, taskData.holes[iHole].qWaters);
+  }
 }

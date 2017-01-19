@@ -12,8 +12,7 @@ int main(int argc, char **argv)
   try
   {
     CSVDataImporter dataImporter;
-    RegressionModelLn rm(dataImporter.read("/mnt/windows/Users/user/Documents/projects/GPTestTask/taskData.csv"));
-    Solver solver(std::move(rm));
+    Solver solver(std::make_unique<RegressionModelLn1>(dataImporter.read("/mnt/windows/Users/user/Documents/projects/GPTestTask/taskData.csv")));
     solver.SolverInit();
     if(!solver.Solve())
     {

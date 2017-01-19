@@ -1,4 +1,10 @@
 #include "tester.h"
+
+#include <iostream>
+#include <cstdlib>
+#include "solver.h"
+#include "dataimporter.h"
+#include <memory>
 void tassert(bool val)
 {
   if(!val)
@@ -41,7 +47,7 @@ void Tester::testExactSolution()
   FunctionRef f;
   Eigen::Matrix<double,1, 4> params{1, 8, 3, 0.0001};
   const std::vector<size_t> sizes{100, 200, 100};
-  RegressionModelLn rm(generateTaskData(f, sizes, params));
+  RegressionModelLn1 rm(generateTaskData(f, sizes, params));
   const double eps = 1e-8;
   for(size_t i = 1; i<rm._oTD.holes[0].qDivT.size(); ++i)
   {
@@ -71,7 +77,7 @@ void Tester::testSolver()
   FunctionRef f;
   Eigen::Matrix<double,1, 3> params{2, 4, 0.001};
   const std::vector<size_t> sizes{300, 200};
-  Solver solver(RegressionModelLn(generateTaskData(f, sizes, params)));
+  Solver solver(std::make_unique<RegressionModelLn1>(generateTaskData(f, sizes, params)));
   solver.SolverInit();
   if(!solver.Solve())
   {
@@ -86,73 +92,26 @@ void Tester::testSolver()
   std::cout<<"test passed"<<std::endl;
 }
 
-void Tester::testRealWorldIterative()
-{
-  CSVDataImporter dataImporter;
-  TaskData taskDataOrig = dataImporter.read("/mnt/windows/Users/user/Documents/projects/GPTestTask/taskData.csv");
-  
-  Eigen::VectorXd prevResult;
-  {
-    TaskData taskData = taskDataOrig;
-    TaskDataHelper::StripTaskData(taskData, 0, 20000000, 3);
-    RegressionModelLn rm(taskData);
-    Solver solver(std::move(rm));
-    solver.SolverInit();
-    if(!solver.Solve())
-    {
-      std::cout<<"Solution not found"<<std::endl;
-    }
-    prevResult = solver.GetResult();
-    std::cout<<"Result model params"<<prevResult.transpose()<<std::endl;
-  }
-  {
-    TaskData taskData = taskDataOrig;
-    TaskDataHelper::StripTaskData(taskData, 0, 20000000, 20);
-    RegressionModelLn rm(taskData);
-    Solver solver(std::move(rm));
-    solver.SolverInit();
-    solver._modelParams = prevResult;
-    if(!solver.Solve())
-    {
-      std::cout<<"Solution not found"<<std::endl;
-    }
-    prevResult = solver.GetResult();
-    std::cout<<"Result model params"<<prevResult.transpose()<<std::endl;
-  }
-  {
-    TaskData taskData = taskDataOrig;
-    TaskDataHelper::StripTaskData(taskData, 0, 20000000, 2000000000);
-    RegressionModelLn rm(taskData);
-    Solver solver(std::move(rm));
-    solver.SolverInit();
-    solver._modelParams = prevResult;
-    if(!solver.Solve())
-    {
-      std::cout<<"Solution not found"<<std::endl;
-    }
-    prevResult = solver.GetResult();
-    std::cout<<"Result model params"<<prevResult.transpose()<<std::endl;
-  }
-}
-
 void Tester::testRealWorld()
 {
   CSVDataImporter dataImporter;
-  TaskData taskDataOrig = dataImporter.read("/mnt/windows/Users/user/Documents/projects/GPTestTask/taskData.csv");
-  RegressionModelLn rm(taskDataOrig);
-  Solver solver(std::move(rm));
+  Solver solver(std::make_unique<RegressionModelLn1>(dataImporter.read("/mnt/windows/Users/user/Documents/projects/GPTestTask/taskData.csv")));
   solver.SolverInit();
   if(!solver.Solve())
+  {
     std::cout<<"Solution not found"<<std::endl;
-    std::cout<<"Result model params"<<solver.GetResult().transpose()<<std::endl;
+    tassert(false);
+  }
+  std::cout<<"Result model params"<<solver.GetResult().transpose()<<std::endl;
+  std::cout<<"test passed"<<std::endl;
 }
 
 void Tester::Test()
 {
   try
   {
-    //testExactSolution();
-    //testSolver();
+    testExactSolution();
+    testSolver();
     testRealWorld();
   }
   catch(...)

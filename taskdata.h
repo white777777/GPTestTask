@@ -2,7 +2,6 @@
 #define TASKDATA_H
 #include <vector>
 #include <string>
-#include <iostream>
 
 /// Statistical input data which describes task
 //TODO: read data Q(t)
@@ -29,7 +28,9 @@ class TaskDataHelper
 public:
   static size_t GetTaskSize(const TaskData & taskData);
   
-  static void StripTaskData(TaskData & taskData, size_t i, size_t n, size_t nQ);
+  static void StripTaskData(TaskData & taskData, size_t iHole, size_t nHole, size_t nQ);
+  
+  static void SwapOilWater(TaskData & taskData);
 };
 
 #endif // TASKDATA_H
