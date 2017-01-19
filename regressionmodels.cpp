@@ -60,7 +60,6 @@ void RegressionModelLn::CalcValue(const Eigen::VectorXd& params, WorkingSet& ws)
       ws.J(it, i) = oneDivWsI;
       
       const double tFromStart = optHoleData.sumT[j];
-      // TODO: what if fVal = 0
       for(size_t iParam = 0; iParam<_func.nParams; ++iParam)
       {
         ws.J(it, _nQParams+iParam) = _func.calcDFDIParamDivFT(iParam, funcParams, tFromStart);
@@ -87,4 +86,18 @@ bool RegressionModelLn::IsReady() const
   )
     return false;
   return true;
+}
+
+void RegressionModelLn::NormalizeParams(Eigen::VectorXd& params)
+{
+  for(size_t i = 0; i< _nQParams; ++i)
+  {
+    if(params[i] <0)
+      params[i] = 0.0;
+  }
+  for(size_t i = 0; i< _nFuncParams; ++i)
+  {
+    if(params[i+_nQParams] < _func.GetParamLowerLimits(i)) 
+      params[i] = _func.GetParamLowerLimits(i);
+  }
 }

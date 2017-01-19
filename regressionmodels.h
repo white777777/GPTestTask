@@ -65,6 +65,7 @@ public:
     return WorkingSet(_taskSize, _nParams);
   }
   void CalcValue(const Eigen::VectorXd & params, WorkingSet & ws);
+  void NormalizeParams(Eigen::VectorXd & params);
 private:
   OptimizedTaskData fillOptimizedHoleData(const TaskData& taskData);
   friend class Tester;
