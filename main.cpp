@@ -18,7 +18,6 @@ int main(int argc, char **argv)
     if(!solver.Solve())
     {
       std::cout<<"Solution not found"<<std::endl;
-      return 0;
     }
     std::cout<<"Result model params"<<solver.GetResult().transpose()<<std::endl;
   }

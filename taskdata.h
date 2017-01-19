@@ -27,25 +27,9 @@ struct TaskData
 class TaskDataHelper
 {
 public:
-  static size_t GetTaskSize(const TaskData & taskData)
-  {
-    std::cout<<"Task size:"<<std::endl;
-    size_t taskDataSize = 0;
-    for(const HoleData & holeData: taskData.holes)
-    {
-      double sumQOil = 0;
-      double sumT = 0;
-      for(size_t i = 0; i<holeData.ts.size(); ++i)
-      {
-        sumQOil += holeData.qOils[i];
-        sumT += holeData.ts[i];
-      }
-      std::cout<<"  Hole '"<< holeData.name << "' size: " << holeData.ts.size() << ". Stat: T: "<< sumT<< ", QOil: "<< sumQOil<< std::endl;
-      taskDataSize += holeData.ts.size();
-    }
-    std::cout<<"Number holes: "<< taskData.holes.size() <<". Whole stat size: "<< taskDataSize<<std::endl;
-    return taskDataSize;
-  }
+  static size_t GetTaskSize(const TaskData & taskData);
+  
+  static void StripTaskData(TaskData & taskData, size_t i, size_t n, size_t nQ);
 };
 
 #endif // TASKDATA_H
