@@ -88,7 +88,7 @@ public:
     switch(iParam)
     {
       case 0 :
-        return 1e-6;
+        return 1e-20;
         break;
     }
     throw std::invalid_argument("Param index exceeds params count");

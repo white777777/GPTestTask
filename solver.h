@@ -14,8 +14,8 @@ class Solver
 private:
   typedef RegressionModelLn TRegr;
   //Solver params
-  double eps = 1e-5;
-  size_t nMaxIter = 100;
+  double eps = 1e-4;
+  size_t nMaxIter = 10000;
   
   //Solver state;
   bool _isInited = false;
@@ -23,6 +23,7 @@ private:
   //input data
   TRegr _regressionModel;
   
+public:
   //working set
   WorkingSet _ws;
   Eigen::VectorXd _modelParams;

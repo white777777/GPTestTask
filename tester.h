@@ -8,15 +8,12 @@
 class Tester
 {
   void testExactSolution();
+  void testExactSolutionPrint();
   void testSolver();
+  void testRealWorldIterative();
   void testRealWorld();
 public:
-  void Test()
-  {
-    testExactSolution();
-    testSolver();
-    testRealWorld();
-  }
+  void Test();
 };
 
 

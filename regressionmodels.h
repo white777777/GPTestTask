@@ -13,7 +13,7 @@ struct WorkingSet
 {
   WorkingSet(){};
   WorkingSet(size_t taskSize, size_t nParams)
-  : J(taskSize, nParams)
+  : J(Eigen::MatrixXd::Zero(taskSize, nParams))
   , yMinusF(taskSize)
   {
   }
@@ -60,10 +60,7 @@ public:
   bool IsReady() const;
   
   Eigen::VectorXd GenParams0Vec();
-  WorkingSet InitWorkingSet()
-  {
-    return WorkingSet(_taskSize, _nParams);
-  }
+  WorkingSet InitWorkingSet();
   void CalcValue(const Eigen::VectorXd & params, WorkingSet & ws);
   void NormalizeParams(Eigen::VectorXd & params);
 private:

@@ -39,7 +39,7 @@ Eigen::VectorXd RegressionModelLn::GenParams0Vec()
 {
   Eigen::VectorXd params(_nParams);
   for(size_t i = 0; i<_nQParams; ++i)
-    params[i] = 1.0;
+    params[i] = _oTD.holes[i].qDivT[0];
   for(size_t i = 0; i<_nFuncParams; ++i)
     params[_taskData.holes.size() + i] = _func.GetDefaultParam(i);
   return params;
@@ -53,20 +53,18 @@ void RegressionModelLn::CalcValue(const Eigen::VectorXd& params, WorkingSet& ws)
   {
     const HoleData& holeData = _taskData.holes[i];
     const OptimizedHoleData& optHoleData = _oTD.holes[i];
-    const double oneDivWsI = 1.0/params[i];
     for(size_t j = 0; j<holeData.ts.size();++j)
     {
       // Find the way to minimize task size
-      ws.J(it, i) = oneDivWsI;
+      ws.J(it, i) = 1.0/params[i];
       
       const double tFromStart = optHoleData.sumT[j];
-      for(size_t iParam = 0; iParam<_func.nParams; ++iParam)
-      {
+      for(size_t iParam = 0; iParam<_nFuncParams; ++iParam)
         ws.J(it, _nQParams+iParam) = _func.calcDFDIParamDivFT(iParam, funcParams, tFromStart);
-      }
+
       const double qDivTVal = optHoleData.qDivT[j];
       if(abs(qDivTVal) > 0)
-        ws.yMinusF[it] = log(qDivTVal) -log(params[i]) - _func.calcLnFT(funcParams, tFromStart);
+        ws.yMinusF[it] = log(qDivTVal) - log(params[i]) - _func.calcLnFT(funcParams, tFromStart);
       else
       {
         // TODO: filter this line from input task data
@@ -90,14 +88,34 @@ bool RegressionModelLn::IsReady() const
 
 void RegressionModelLn::NormalizeParams(Eigen::VectorXd& params)
 {
+  size_t nClip = 0;
   for(size_t i = 0; i< _nQParams; ++i)
   {
-    if(params[i] <0)
-      params[i] = 0.0;
+    const double eps = 1e-16;
+    if(params[i] < eps)
+    {
+      params[i] = eps;
+      ++nClip;
+    }
   }
   for(size_t i = 0; i< _nFuncParams; ++i)
   {
     if(params[i+_nQParams] < _func.GetParamLowerLimits(i)) 
-      params[i] = _func.GetParamLowerLimits(i);
+    {
+      params[i+_nQParams] = _func.GetParamLowerLimits(i);
+      ++nClip;
+    }
+    if(params[i+_nQParams] > _func.GetParamUpperLimits(i)) 
+    {
+      params[i+_nQParams] = _func.GetParamUpperLimits(i);
+      ++nClip;
+    }
   }
+  if(nClip>0)
+    std::cout<<"Warning: "<<nClip<<" params out of range"<< std::endl;
+}
+
+WorkingSet RegressionModelLn::InitWorkingSet()
+{
+  return WorkingSet(_taskSize, _nParams);
 }
