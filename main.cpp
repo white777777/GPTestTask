@@ -2,12 +2,15 @@
 #include "solver.h"
 #include "dataimporter.h"
 #include "tester.h"
+#include "analyze.h"
 
 int main(int argc, char **argv) 
 {
   //TODO: move test to anotother executable
-  Tester tester;
-  tester.Test();
+  //Tester tester;
+  //tester.Test();
+  Analyzer an;
+  an.Analyze();
   return 0;
   try
   {

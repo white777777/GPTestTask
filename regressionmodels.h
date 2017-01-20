@@ -5,7 +5,7 @@
 
 #include "functions.h"
 #include "taskdata.h"
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 /// struct for interacting with solver
 struct WorkingSet
@@ -29,7 +29,7 @@ public:
   virtual Eigen::VectorXd GenParams0Vec() = 0;
   virtual WorkingSet InitWorkingSet() = 0;
   virtual void CalcValue(const Eigen::VectorXd & params, WorkingSet & ws) = 0;
-  virtual void NormalizeParams(Eigen::VectorXd & params) = 0;
+  virtual size_t NormalizeParams(Eigen::VectorXd & params) = 0;
 };
 
 /// Regression model
@@ -53,8 +53,6 @@ public:
   };
   
 private:
-
-  TFunc _func;
   /// Input statistical data
   TaskData _taskData;
   /// Task data optimized for our purposes
@@ -73,7 +71,7 @@ public:
   , _oTD(fillOptimizedHoleData(_taskData))
   , _taskSize(TaskDataHelper::GetTaskSize(_taskData))
   , _nQParams(_taskData.holes.size())
-  , _nFuncParams(_func.nParams)
+  , _nFuncParams(TFunc::nParams)
   , _nParams(_nQParams + _nFuncParams)
   {
   }
@@ -93,7 +91,7 @@ public:
     for(size_t i = 0; i<_nQParams; ++i)
       params[i] = _oTD.holes[i].qDivT[0];
     for(size_t i = 0; i<_nFuncParams; ++i)
-      params[_taskData.holes.size() + i] = _func.GetDefaultParam(i);
+      params[_taskData.holes.size() + i] = TFunc::GetDefaultParam(i);
     return params;
   }
   
@@ -117,12 +115,15 @@ public:
         ws.J(it, i) = 1.0/params[i];
         
         const double tFromStart = optHoleData.sumT[j];
+        const double valFT = TFunc::CalcFT(funcParams, tFromStart);
         for(size_t iParam = 0; iParam<_nFuncParams; ++iParam)
-          ws.J(it, _nQParams+iParam) = _func.calcDFDIParamDivFT(iParam, funcParams, tFromStart);
+          ws.J(it, _nQParams+iParam) = TFunc::CalcDFDIParam(iParam, funcParams, tFromStart)/valFT;
+        //ws.J(it, _nQParams+iParam) = TFunc::calcDFDIParamDivFT(iParam, funcParams, tFromStart);
         
         const double qDivTVal = optHoleData.qDivT[j];
         if(abs(qDivTVal) > 0)
-          ws.yMinusF[it] = log(qDivTVal) - log(params[i]) - _func.calcLnFT(funcParams, tFromStart);
+          //ws.yMinusF[it] = log(qDivTVal) - log(params[i]) - TFunc::calcLnFT(funcParams, tFromStart);
+          ws.yMinusF[it] = log(qDivTVal) - log(params[i]) - log(valFT);
         else
         {
           // TODO: filter this line from input task data
@@ -135,7 +136,7 @@ public:
     }
   }
   
-  void NormalizeParams(Eigen::VectorXd& params)
+  size_t NormalizeParams(Eigen::VectorXd& params)
   {
     size_t nClip = 0;
     for(size_t i = 0; i< _nQParams; ++i)
@@ -149,19 +150,18 @@ public:
     }
     for(size_t i = 0; i< _nFuncParams; ++i)
     {
-      if(params[i+_nQParams] < _func.GetParamLowerLimits(i)) 
+      if(params[i+_nQParams] < TFunc::GetParamLowerLimits(i)) 
       {
-        params[i+_nQParams] = _func.GetParamLowerLimits(i);
+        params[i+_nQParams] = TFunc::GetParamLowerLimits(i);
         ++nClip;
       }
-      if(params[i+_nQParams] > _func.GetParamUpperLimits(i)) 
+      if(params[i+_nQParams] > TFunc::GetParamUpperLimits(i)) 
       {
-        params[i+_nQParams] = _func.GetParamUpperLimits(i);
+        params[i+_nQParams] = TFunc::GetParamUpperLimits(i);
         ++nClip;
       }
     }
-    //if(nClip>0)
-    //  std::cout<<"Warning: "<<nClip<<" params out of range"<< std::endl;
+    return nClip;
   }
 private:
   OptimizedTaskData fillOptimizedHoleData(const TaskData& taskData)

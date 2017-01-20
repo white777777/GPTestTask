@@ -4,10 +4,11 @@
 #include <limits>
 #include <iostream>
 
-void Solver::SolverInit()
+void Solver::SolverInit(const Solver::SolverParams & sp)
 {
   if(!_regressionModel->IsReady())
     throw std::invalid_argument("Empty task data");
+  _sp = sp;
   _modelParams = _regressionModel->GenParams0Vec();
   _ws = _regressionModel->InitWorkingSet();
   _isInited = true;
@@ -16,19 +17,19 @@ void Solver::SolverInit()
 Eigen::VectorXd Solver::SolveStep()
 {
   using namespace Eigen;
-  _regressionModel->NormalizeParams(_modelParams);
-  _regressionModel->CalcValue(_modelParams, _ws);
-  //Eigen::MatrixXd A = _ws.J.transpose()*_ws.J;
-  //Eigen::MatrixXd b = _ws.J.transpose()*_ws.yMinusF;
-  //return A.householderQr().solve(b);
+  if(_sp.enableNormalizer)
+  {
+    size_t nClip =_regressionModel->NormalizeParams(_modelParams);
+    if( nClip>0  && _sp.verbose>1)
+      std::cout<<"Warning: "<<nClip<<" params out of range"<< std::endl;
+  }
   
+  _regressionModel->CalcValue(_modelParams, _ws);
   MatrixXd A = _ws.J.transpose()*_ws.J;
   MatrixXd b = _ws.J.transpose()*_ws.yMinusF;
   ConjugateGradient<MatrixXd, Lower|Upper> cg;
   cg.compute(A);
   return cg.solve(b);
-  
-  //return _ws.J.householderQr().solve(_ws.yMinusF);
 }
 
 Eigen::VectorXd Solver::GetResult() const
@@ -40,15 +41,22 @@ bool Solver::Solve()
 {
   if(!_isInited)
     throw std::invalid_argument("Solver not initialized");
-  for(size_t nIter = 0; nIter<nMaxIter; ++nIter)
+  
+  for(size_t nIter = 0; nIter<_sp.nMaxIter; ++nIter)
   {
     Eigen::VectorXd deltaParams = SolveStep();
     _modelParams += deltaParams;
 
+    if(_sp.verbose > 2)
+      std::cout<<"params: "<<_modelParams<<std::endl;
+    if(_sp.verbose > 3)
+      std::cout<<"y-f: "<< _ws.yMinusF<<std::endl;
+    
     double diff1 = deltaParams.lpNorm<Eigen::Infinity>();
     double diff2 = _ws.yMinusF.lpNorm<Eigen::Infinity>();
-    std::cout<<"Step: "<<nIter<<" diff1: "<<diff1<<" Y-F ln: "<<diff2<<std::endl;
-    if(diff1<eps || diff2<eps)
+    if(_sp.verbose > 0)
+      std::cout<<"Step: "<<nIter<<" diff1: "<<diff1<<" Y-F: "<<diff2<<std::endl;
+    if(diff1<_sp.epsDiff || diff2<_sp.epsYMinusF)
     {
       _isInited = false;
       return true;

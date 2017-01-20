@@ -7,13 +7,28 @@
 /// Regression task solver
 class Solver
 {
+public:
+  struct SolverParams
+  {
+  public:
+    SolverParams()
+    : epsDiff(1e-6)
+    , epsYMinusF(1e-6)
+    , nMaxIter(1000)
+    , verbose(0)
+    , enableNormalizer(true)
+    {
+    }
+    double epsDiff;
+    double epsYMinusF;
+    size_t nMaxIter;
+    int verbose;
+    bool enableNormalizer;
+  };
 private:
-  //Solver params
-  double eps = 1e-4;
-  size_t nMaxIter = 10000;
-  
   //Solver state;
   bool _isInited = false;
+  SolverParams _sp;
 
   //input data
   std::unique_ptr<IRegressionModel> _regressionModel;
@@ -24,7 +39,7 @@ private:
 public:
   Solver(std::unique_ptr<IRegressionModel> rm);
   
-  void SolverInit();
+  void SolverInit(const SolverParams & sp = SolverParams());
   /// One solve step. Genereates and solves SLE from regression model
   Eigen::VectorXd  SolveStep();
   /// Returns result model params
