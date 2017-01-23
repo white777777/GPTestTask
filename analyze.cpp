@@ -18,6 +18,10 @@
 
 #include <gsl/gsl_interp.h>
 
+#include <algorithm>
+#include <numeric>
+#include <string>
+
 struct AnalyzeSet
 {
   Eigen::VectorXd params;
@@ -86,11 +90,11 @@ void calcAndSave(TaskData taskDataOrig, std::vector<AnalyzeSet> & results)
 
 typedef std::vector<double> dvec;
 
-void Analyzer::Analyze()
+void Analyzer::Analyze(const std::string & filename)
 {
   
   CSVDataImporter dataImporter;
-  TaskData taskDataOrig = dataImporter.read("/mnt/windows/Users/user/Documents/projects/GPTestTask/taskData.csv");
+  TaskData taskDataOrig = dataImporter.read(filename);
   OptimizedTaskData oTD(taskDataOrig);
 
   std::vector<AnalyzeSet> results;
@@ -140,21 +144,6 @@ void Analyzer::Analyze()
   drawFunc(Function1::CalcFT, results[3].params.tail(Function1::nParams), std::string("func_")+results[3].name);
   drawFunc(Function2::CalcFT, results[4].params.tail(Function2::nParams), std::string("func_")+results[4].name);
   
-
-  auto slpitPlot = [&taskDataOrig, &oTD](const auto & data){
-    Gnuplot gp;
-    gp<<"plot ";
-    size_t iYMinusF = 0;
-    for(size_t i=0; i<taskDataOrig.holes.size(); ++i)
-    //for(size_t i=1; i<3; ++i)
-    {
-      size_t iYMinusFEnd = iYMinusF + oTD.holes[i].sumT.size();
-      gp << gp.file1d(boost::make_tuple(oTD.holes[i].sumT, dvec (&data[iYMinusF], &data[iYMinusFEnd]))) <<
-      "with lines title '"<<i<<taskDataOrig.holes[i].name  <<"', ";
-    }
-    gp<<std::endl;
-  };
-  
   auto toVVD = [](const auto & inVec, auto getSize)
   {
     std::vector<dvec> res;
@@ -167,22 +156,6 @@ void Analyzer::Analyze()
     }
     return res;
   };
-  
-  auto makeBigVector = [](auto in, auto gett){
-    dvec res;
-    for(size_t i=0; i<in.size(); ++i)
-    {
-      res.insert(res.end(), gett(in, i).begin(), gett(in, i).end());
-    }
-    return res;
-  };
-
-  //slpitPlot(makeBigVector(oTD.holes         , [](const auto& v, size_t i) -> const auto& {return v[i].qDivT;}));
-  //slpitPlot(results[0].delta);
-  //slpitPlot(results[1].delta);
-  //slpitPlot(results[2].delta);
-  //slpitPlot(results[3].delta);
-  //slpitPlot(results[4].delta);
   
   auto getSize = [&taskDataOrig](size_t i){
     return taskDataOrig.holes[i].ts.size();
@@ -211,11 +184,11 @@ void Analyzer::Analyze()
     gsl_interp_free (interpolation);
   };
   
-  auto saveToCSV = [](const dvec & arr, std::string name){
+  auto saveToCSV = [](const dvec& time, const dvec & arr, std::string name){
     std::ofstream ofs(name);
-    for(double val:arr)
+    for(size_t i = 0; i< arr.size(); ++i)
     {
-      ofs<<val<<";"<<std::endl;
+      ofs<<time[i]<<","<<arr[i]<<","<<std::endl;
     }
   };
   
@@ -235,9 +208,37 @@ void Analyzer::Analyze()
     gp<<"plot " << gp.file1d(boost::make_tuple(time, interpResult)) <<
       "with lines title '"<<name<<"'"<<std::endl;
       
-    saveToCSV(interpResult, name+".csv");
+    saveToCSV(time, interpResult, name+".csv");
 
     interpolatedDeltaPerResult.push_back(std::move(interpResult));
+  }
+  
+  for(const AnalyzeSet & result: results)
+  {
+    double min = result.delta.minCoeff();
+    double max = result.delta.maxCoeff();
+    const size_t nIntervals = 15;
+    dvec count(nIntervals);
+    dvec x(nIntervals);
+    x[0] = min;
+    for(size_t i = 1; i<x.size(); ++i)
+     x[i] = x[i-1] +(max-min)/nIntervals;
+    for(size_t iDelta = 0; iDelta<result.delta.size(); ++iDelta)
+    {
+      double val = result.delta[iDelta];
+      size_t i = (size_t)(val-min)/(max- min)*nIntervals;
+      ++count[i];
+    }
+    
+    std::string name = std::string("raspr_") + std::to_string(nIntervals)+result.name;
+    Gnuplot gp;
+    gp<<"set terminal postscript eps enhanced color font 'Helvetica,10'"<<std::endl;
+    gp<<"set output '"<<name<<".ps'"<<std::endl;
+    gp<<"plot " << gp.file1d(boost::make_tuple(x, count)) <<
+    "with boxes title '"<<name<<"'"<<std::endl;
+    
+    saveToCSV(x, count, name+".csv");
+    
   }
   
 };
