@@ -22,6 +22,39 @@ struct WorkingSet
   Eigen::VectorXd yMinusF;
 };
 
+
+struct OptimizedHoleData
+{
+  std::vector<double> sumT;
+  std::vector<double> qDivT;
+};
+
+struct OptimizedTaskData
+{
+  std::vector<OptimizedHoleData> holes;
+
+  OptimizedTaskData (const TaskData& taskData)
+  {
+    holes.resize(taskData.holes.size());
+    for(size_t i = 0; i< taskData.holes.size(); ++i)
+    {
+      OptimizedHoleData& hole = holes[i];
+      const HoleData& tHole = taskData.holes[i];
+      hole.sumT.resize(tHole.ts.size());
+      hole.qDivT.resize(tHole.ts.size());
+      for(size_t j = 0; j<tHole.ts.size(); ++j)
+      {
+        hole.qDivT[j] = tHole.qOils[j]/tHole.ts[j];
+        if(j==0)
+          hole.sumT[j] = tHole.ts[j]/2;
+        else
+          //We use half of time (ts) to get more precice Q derivative
+          hole.sumT[j] = hole.sumT[j-1] +tHole.ts[j-1]/2 + tHole.ts[j]/2;
+      }
+    }
+  };
+};
+
 class IRegressionModel
 {
 public:
@@ -39,19 +72,6 @@ public:
 template<class TFunc>
 class RegressionModelLn: public IRegressionModel
 {
-public:
-  //typedef TemplateFunc TFunc;
-  struct OptimizedHoleData
-  {
-    std::vector<double> sumT;
-    std::vector<double> qDivT;
-  };
-  
-  struct OptimizedTaskData
-  {
-    std::vector<OptimizedHoleData> holes;
-  };
-  
 private:
   /// Input statistical data
   TaskData _taskData;
@@ -68,9 +88,9 @@ public:
   RegressionModelLn(const TaskData& taskData)
   //please be carefull with initialization order
   : _taskData(taskData)
-  , _oTD(fillOptimizedHoleData(_taskData))
-  , _taskSize(TaskDataHelper::GetTaskSize(_taskData))
-  , _nQParams(_taskData.holes.size())
+  , _oTD(taskData)
+  , _taskSize(TaskDataHelper::GetTaskSize(taskData))
+  , _nQParams(taskData.holes.size())
   , _nFuncParams(TFunc::nParams)
   , _nParams(_nQParams + _nFuncParams)
   {
@@ -163,29 +183,6 @@ public:
     }
     return nClip;
   }
-private:
-  OptimizedTaskData fillOptimizedHoleData(const TaskData& taskData)
-  {
-    OptimizedTaskData oTD;
-    oTD.holes.resize(taskData.holes.size());
-    for(size_t i = 0; i< taskData.holes.size(); ++i)
-    {
-      OptimizedHoleData& hole = oTD.holes[i];
-      const HoleData& tHole = taskData.holes[i];
-      hole.sumT.resize(tHole.ts.size());
-      hole.qDivT.resize(tHole.ts.size());
-      for(size_t j = 0; j<tHole.ts.size(); ++j)
-      {
-        hole.qDivT[j] = tHole.qOils[j]/tHole.ts[j];
-        if(j==0)
-          hole.sumT[j] = tHole.ts[j]/2;
-        else
-          //We use half of time (ts) to get more precice Q derivative
-          hole.sumT[j] = hole.sumT[j-1] +tHole.ts[j-1]/2 + tHole.ts[j]/2;
-      }
-    }
-    return oTD;
-  };
   friend class Tester;
 };
 

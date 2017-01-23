@@ -4,8 +4,6 @@
 #include <string>
 
 /// Statistical input data which describes task
-//TODO: read data Q(t)
-//TODO: convert data to Q'(t)
 struct HoleData
 {
   /// hole name

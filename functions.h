@@ -69,7 +69,7 @@ public:
     switch(iParam)
     {
       case 0 :
-        return 0.0;
+        return 1e-300;
         break;
     }
     throw std::invalid_argument("Param index exceeds params count");
@@ -192,10 +192,10 @@ public:
     switch(iParam)
     {
       case 0 :
-        return 0.0;
+        return 1e-300;
         break;
       case 1:
-        return 0.0;
+        return 1e-300;
         break;
     }
     throw std::invalid_argument("Param index exceeds params count");
@@ -294,7 +294,7 @@ public:
       case 0 :
       case 1 :
       case 2 :
-        return 0.0;
+        return 1e-300;
         break;
     }
     throw std::invalid_argument("Param index exceeds params count");

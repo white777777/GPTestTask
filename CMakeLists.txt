@@ -12,8 +12,11 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-find_package(Boost REQUIRED COMPONENTS program_options system serialization)
+find_package(Boost REQUIRED COMPONENTS filesystem iostreams program_options system serialization)
 include_directories(${Boost_INCLUDE_DIR})
+
+find_package(GSL REQUIRED)
+include_directories(${GSL_INCLUDE_DIRS})
 
 add_executable(gptesttask 
 dataimporter.h
@@ -33,8 +36,9 @@ analyze.cpp
 )
 
 target_link_libraries (gptesttask 
-${CMAKE_THREAD_LIBS_INIT}
+  ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
+  ${GSL_LIBRARIES}
 )
 
 install(TARGETS gptesttask RUNTIME DESTINATION bin)

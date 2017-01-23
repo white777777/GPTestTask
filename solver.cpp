@@ -17,13 +17,7 @@ void Solver::SolverInit(const Solver::SolverParams & sp)
 Eigen::VectorXd Solver::SolveStep()
 {
   using namespace Eigen;
-  if(_sp.enableNormalizer)
-  {
-    size_t nClip =_regressionModel->NormalizeParams(_modelParams);
-    if( nClip>0  && _sp.verbose>1)
-      std::cout<<"Warning: "<<nClip<<" params out of range"<< std::endl;
-  }
-  
+
   _regressionModel->CalcValue(_modelParams, _ws);
   MatrixXd A = _ws.J.transpose()*_ws.J;
   MatrixXd b = _ws.J.transpose()*_ws.yMinusF;
@@ -51,6 +45,13 @@ bool Solver::Solve()
       std::cout<<"params: "<<_modelParams<<std::endl;
     if(_sp.verbose > 3)
       std::cout<<"y-f: "<< _ws.yMinusF<<std::endl;
+    
+    if(_sp.enableNormalizer)
+    {
+      size_t nClip =_regressionModel->NormalizeParams(_modelParams);
+      if( nClip>0  && _sp.verbose>1)
+        std::cout<<"Warning: "<<nClip<<" params out of range"<< std::endl;
+    }
     
     double diff1 = deltaParams.lpNorm<Eigen::Infinity>();
     double diff2 = _ws.yMinusF.lpNorm<Eigen::Infinity>();
