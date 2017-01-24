@@ -15,9 +15,6 @@ endif()
 find_package(Boost REQUIRED COMPONENTS filesystem iostreams program_options system serialization)
 include_directories(${Boost_INCLUDE_DIR})
 
-find_package(GSL REQUIRED)
-include_directories(${GSL_INCLUDE_DIRS})
-
 add_executable(gptesttask 
 dataimporter.h
 dataimporter.cpp
@@ -38,7 +35,6 @@ analyze.cpp
 target_link_libraries (gptesttask 
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
-  ${GSL_LIBRARIES}
-)
+s)
 
 install(TARGETS gptesttask RUNTIME DESTINATION bin)

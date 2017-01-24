@@ -16,8 +16,6 @@
 
 #include "gnuplot-iostream.h"
 
-#include <gsl/gsl_interp.h>
-
 #include <algorithm>
 #include <numeric>
 #include <string>
