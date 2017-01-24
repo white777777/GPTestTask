@@ -143,77 +143,8 @@ void Analyzer::Analyze(const std::string & filename)
   drawFunc(Function4::CalcFT, results[2].params.tail(Function4::nParams), std::string("func_")+results[2].name);
   drawFunc(Function1::CalcFT, results[3].params.tail(Function1::nParams), std::string("func_")+results[3].name);
   drawFunc(Function2::CalcFT, results[4].params.tail(Function2::nParams), std::string("func_")+results[4].name);
-  
-  auto toVVD = [](const auto & inVec, auto getSize)
-  {
-    std::vector<dvec> res;
-    size_t beg = 0;
-    while(beg<inVec.size()-1)
-    {
-      size_t end = beg + getSize(res.size());
-      res.emplace_back(&inVec[beg], &inVec[end]);
-      beg = end;
-    }
-    return res;
-  };
-  
-  auto getSize = [&taskDataOrig](size_t i){
-    return taskDataOrig.holes[i].ts.size();
-  };
-  
-  auto interpAndSum = [&time](const dvec& ts,const dvec& result, dvec& sumVec){
-    if(ts.size()<2)
-      return;
-    //inialise and allocate the gsl objects
-    assert(ts.size() == result.size());
-    gsl_interp *interpolation = gsl_interp_alloc (gsl_interp_linear, ts.size());
-    gsl_interp_init(interpolation, ts.data(), result.data(), ts.size());
-    gsl_interp_accel * accelerator =  gsl_interp_accel_alloc();
-    
-    for(size_t i = 0; i<time.size();++i)
-    {
-      if(time[i]<ts.front())
-        continue;
-      if(time[i]>ts.back())
-        break;
-      double value = gsl_interp_eval(interpolation, ts.data(), result.data(), time[i], accelerator);
-      sumVec[i] +=value;
-    }
-    
-    gsl_interp_accel_free (accelerator);
-    gsl_interp_free (interpolation);
-  };
-  
-  auto saveToCSV = [](const dvec& time, const dvec & arr, std::string name){
-    std::ofstream ofs(name);
-    for(size_t i = 0; i< arr.size(); ++i)
-    {
-      ofs<<time[i]<<","<<arr[i]<<","<<std::endl;
-    }
-  };
-  
-  std::vector<dvec> interpolatedDeltaPerResult;
-  for(const AnalyzeSet & result: results)
-  {
-    std::vector<dvec> resultsPerHole = toVVD(result.delta, getSize);
-    dvec interpResult(time.size(), 0);
-    for(size_t iHole = 0; iHole<resultsPerHole.size(); ++iHole)
-    {
-      interpAndSum(oTD.holes[iHole].sumT, resultsPerHole[iHole], interpResult);
-    }
-    const std::string name = std::string("sumDelta") + result.name;
-    Gnuplot gp;
-    gp<<"set terminal postscript eps enhanced color font 'Helvetica,10'"<<std::endl;
-    gp<<"set output '"<<name<<".ps'"<<std::endl;
-    gp<<"plot " << gp.file1d(boost::make_tuple(time, interpResult)) <<
-      "with lines title '"<<name<<"'"<<std::endl;
-      
-    saveToCSV(time, interpResult, name+".csv");
 
-    interpolatedDeltaPerResult.push_back(std::move(interpResult));
-  }
-  
-  auto saveToCSV2 = [](const auto & arr, std::string name){
+  auto saveToCSV = [](const auto & arr, std::string name){
     std::ofstream ofs(name);
     for(size_t i = 0; i< arr.size(); ++i)
       ofs<<arr[i]<<","<<std::endl;
@@ -222,31 +153,9 @@ void Analyzer::Analyze(const std::string & filename)
 
   for(const AnalyzeSet & result: results)
   {
-    double min = result.delta.minCoeff();
-    double max = result.delta.maxCoeff();
-    const size_t nIntervals = 15;
-    dvec count(nIntervals);
-    dvec x(nIntervals);
-    x[0] = min;
-    for(size_t i = 1; i<x.size(); ++i)
-     x[i] = x[i-1] +(max-min)/nIntervals;
-    for(size_t iDelta = 0; iDelta<result.delta.size(); ++iDelta)
-    {
-      double val = result.delta[iDelta];
-      size_t i = (size_t)(val-min)/(max- min)*nIntervals;
-      ++count[i];
-    }
-    
-    std::string name = std::string("raspr_") + std::to_string(nIntervals)+result.name;
-    Gnuplot gp;
-    gp<<"set terminal postscript eps enhanced color font 'Helvetica,10'"<<std::endl;
-    gp<<"set output '"<<name<<".ps'"<<std::endl;
-    gp<<"plot " << gp.file1d(boost::make_tuple(x, count)) <<
-    "with boxes title '"<<name<<"'"<<std::endl;
-    
-    saveToCSV(x, count, name+".csv");
-   
-    saveToCSV2(result.delta, std::string("delta_") + result.name +".csv");
+    std::ofstream ofs(result.name + "_params.txt");
+    ofs<<result.params;
+    saveToCSV(result.delta, std::string("delta_") + result.name +".csv");
   }
   
   
