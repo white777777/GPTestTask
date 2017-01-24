@@ -213,6 +213,13 @@ void Analyzer::Analyze(const std::string & filename)
     interpolatedDeltaPerResult.push_back(std::move(interpResult));
   }
   
+  auto saveToCSV2 = [](const auto & arr, std::string name){
+    std::ofstream ofs(name);
+    for(size_t i = 0; i< arr.size(); ++i)
+      ofs<<arr[i]<<","<<std::endl;
+  };
+  
+
   for(const AnalyzeSet & result: results)
   {
     double min = result.delta.minCoeff();
@@ -238,7 +245,9 @@ void Analyzer::Analyze(const std::string & filename)
     "with boxes title '"<<name<<"'"<<std::endl;
     
     saveToCSV(x, count, name+".csv");
-    
+   
+    saveToCSV2(result.delta, std::string("delta_") + result.name +".csv");
   }
+  
   
 };
